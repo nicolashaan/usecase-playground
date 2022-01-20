@@ -8,25 +8,24 @@ fun main(): Unit = runBlocking {
     basketSwitchFacilityServiceUseCase(FacilityServiceId("ABC"))
 
     // In any module that know from :domain-shared
-    val switchFacilityServiceUseCase: SwitchFacilityServiceUseCase  = BasketSwitchFacilityServiceUseCase() // Injected
+    val switchFacilityServiceUseCase: SwitchFacilityServiceUseCase = BasketSwitchFacilityServiceUseCase() // Injected
     switchFacilityServiceUseCase(FacilityServiceId("DEF"))
 
-    val useCase: UseCaseWithParameter<FacilityServiceId, Unit>  = BasketSwitchFacilityServiceUseCase() // Injected
+    val useCase: UseCaseWithParameter<FacilityServiceId, Unit> = BasketSwitchFacilityServiceUseCase() // Injected
     useCase(FacilityServiceId("GHI"))
 
-    val iUseCase: IUseCaseWithParameter<FacilityServiceId, Unit>  = BasketSwitchFacilityServiceUseCase() // Injected
+    val iUseCase: IUseCaseWithParameter<FacilityServiceId, Unit> = BasketSwitchFacilityServiceUseCase() // Injected
     iUseCase(FacilityServiceId("JKL"))
 }
 
 /*
     In :basket
  */
-class BasketSwitchFacilityServiceUseCase : UseCaseWithParameter<FacilityServiceId, Unit>(), SwitchFacilityServiceUseCase {
-    override suspend fun execute(param: FacilityServiceId) {
+class BasketSwitchFacilityServiceUseCase : UseCaseWithParameter<FacilityServiceId, Unit>(
+    { param: FacilityServiceId ->
         println(param.id)
         throw Throwable()
-    }
-}
+    }), SwitchFacilityServiceUseCase
 
 /*
     In :domain-shared
@@ -39,7 +38,7 @@ value class FacilityServiceId(val id: String)
 /*
     In :shared
  */
-abstract class UseCaseWithParameter<P, R> : IUseCaseWithParameter<P, R> {
+abstract class UseCaseWithParameter<P, R>(private val execute: (P) -> R) : IUseCaseWithParameter<P, R> {
     final override suspend operator fun invoke(param: P): Result<R> = runCatching {
         withContext(Dispatchers.IO) {
             println("Execute on I/O dispatcher.")
@@ -50,5 +49,4 @@ abstract class UseCaseWithParameter<P, R> : IUseCaseWithParameter<P, R> {
 
 interface IUseCaseWithParameter<P, R> {
     suspend operator fun invoke(param: P): Result<R>
-    suspend fun execute(param: P): R
 }
